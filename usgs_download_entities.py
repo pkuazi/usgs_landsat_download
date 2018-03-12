@@ -13,6 +13,11 @@ import requests
 from urllib.parse import urlencode
 from urllib.request import urlopen, install_opener, build_opener, HTTPCookieProcessor, Request
 
+MSG_OK = "Success"  # OK
+MSG_EORDER = "Order"
+MSG_SKIP = "Skip"  # SKIP
+MSG_EDATA = "Error"  # File error
+
 def parse_Usgs_DownloadURL(dataid, html, product=None):
     try:
         # downloadOptions = re.findall('<input type="button" title="(.*?)" (disabled="disabled" class="disabled")? onClick="window.location=\'(.*?)\'" .+' , html)
@@ -100,11 +105,15 @@ def entity_download(dataId, outfile,product=None):
     response = requests.get(uri, stream=True, timeout=90)
     print(response.status_code)
     if response.status_code == 200:
-        with open(outfile, 'wb') as f:
-            count = 0
-            for chunk in response.iter_content(chunk_size=1024*1024*2): # 1024*1024=1MB
-                print(count)
-                f.write(chunk)
-                count = count + 1
+        try:
+            with open(outfile, 'wb') as f:
+                count = 0
+                for chunk in response.iter_content(chunk_size=1024*1024*2): # 1024*1024=1MB
+                    print(count)
+                    f.write(chunk)
+                    count = count + 1
+        except:
+            return MSG_EDATA, -2, "下载数据失败！"
+    return "Success", 2, "下载完成！"
 
 

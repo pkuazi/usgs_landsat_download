@@ -6,7 +6,8 @@ Created on Jan 18, 2016
 '''
 import datetime, os, time, subprocess
 import threading
-from usgs_landsat_download import pgsql
+import pgsql
+# from usgs_landsat_download import pgsql
 import usgsutils
 from usgs_download_entities import entity_download
 
@@ -61,8 +62,8 @@ class UserOrderManager(object):
     def test_targz(self, std_file):
         r = subprocess.Popen("tar -tvf %s" % std_file, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         r.wait()
-        
-        if r.stderr.read().find("Error") > 0:
+        # print(r.stderr.read())
+        if r.stderr.read().decode("utf-8").find("Error") > 0:
             return False
         return True 
     
