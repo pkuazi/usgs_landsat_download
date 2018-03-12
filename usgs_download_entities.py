@@ -103,17 +103,27 @@ def entity_download(dataId, outfile,product=None):
     uri = req.url
     print(uri)
     response = requests.get(uri, stream=True, timeout=90)
+    if response.status_code != 200:
+        print("下载数据失败，请稍候重试！")
+        return None, -2, "下载数据失败，请稍候重试！"
+
     print(response.status_code)
     if response.status_code == 200:
-        try:
-            with open(outfile, 'wb') as f:
+        with open(outfile, 'wb') as f:
+            try:
                 count = 0
                 for chunk in response.iter_content(chunk_size=1024*1024*2): # 1024*1024=1MB
-                    print(count)
+                    print(count*2,"MB...")
                     f.write(chunk)
                     count = count + 1
-        except:
-            return MSG_EDATA, -2, "下载数据失败！"
-    return "Success", 2, "下载完成！"
+            except Exception as e:
+                print(e)
+                return MSG_EDATA, -2, "下载数据失败！"
+            finally:
+                f.close()
+        return "Success", 2, "下载完成！"
 
+if __name__ == '__main__':
+    # url = "https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE"
+    entity_download('LC81561192017038LGN00', '/dev/shm/LC81561192017038LGN00.tar.gz', product=None)
 
