@@ -111,7 +111,7 @@ def entity_download(dataId, outfile,product=None):
     if response.status_code == 200:
         with open(outfile, 'wb') as f:
             try:
-                count = 0
+                count = 1
                 for chunk in response.iter_content(chunk_size=1024*1024*2): # 1024*1024=1MB
                     print(count*2,"MB...")
                     f.write(chunk)
