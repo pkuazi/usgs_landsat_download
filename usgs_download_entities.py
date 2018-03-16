@@ -139,58 +139,6 @@ def entity_download_request(dataId, outfile, product=None):
     # delta = t2 - t1
     # print(delta.total_seconds())
 
-    res = requests.get(uri, stream=True, headers = {'Connection': 'close'},timeout=90)
-    print(res.status_code)
-    if res.status_code != 200:
-        print("下载数据失败，请稍候重试！")
-        return None, -2, "下载数据失败，请稍候重试！"
-    else:
-        with open(outfile, 'wb') as f:
-            try:
-
-                t1 = datetime.now()
-                print(t1)
-
-                count = 1
-                for chunk in res.iter_content(chunk_size=1024*1024): # 1024*1024=1MB
-                    print(count*2,"MB...")
-                    f.write(chunk)
-                    count = count + 1
-
-                t2 = datetime.now()
-                print(t2)
-                delta = t2 - t1
-                print(delta.total_seconds())
-    #
-
-            except Exception as e:
-                print(e)
-                return MSG_EDATA, -2, "下载数据失败！"
-            finally:
-                f.close()
-        return "Success", 2, "下载完成！"
-
-    try:
-        req = urllib2.urlopen(url)
-        total_size = int(req.info().getheader('Content-Length').strip())
-        downloaded = 0
-        CHUNK = 256 * 10240
-        with open(outfile, 'wb') as fp:
-            while True:
-                chunk = req.read(CHUNK)
-                downloaded += len(chunk)
-                print
-                math.floor((downloaded / total_size) * 100)
-                if not chunk: break
-                fp.write(chunk)
-    except urllib2.HTTPError as e:
-        print("HTTP Error:", e.code, url)
-        return False
-    except urllib2.URLError as e:
-        print("URL Error:", e.reason, url)
-        return False
-
-
 from urllib.parse import urlencode
 def get_login_params(login_file):
     f = open(login_file,'r')
@@ -230,7 +178,7 @@ def entity_download(dataId, outfile, product=None):
         wget2 = '''wget --load-cookies %s --keep-session-cookies --save-cookies %s --post-data="%s" https://ers.cr.usgs.gov/login''' % (cookie_file, cookie_file, params)
         print(wget2)
         os.system(wget2)
-        wget3 = 'wget --load-cookies %s -O %s %s'%(cookie_file,outfile, dl_url)
+        wget3 = 'wget --load-cookies %s -O %s %s -4'%(cookie_file,outfile, dl_url)
         print(wget3)
         os.system(wget3)
     except Exception as e:
@@ -244,38 +192,7 @@ if __name__ == '__main__':
     # url = "https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE"
     entity_download('LT51300422011320BKT00', '/dev/shm/test.tar.gz', product=None)
 
-#
-#     url = "https://dds.cr.usgs.gov/ltaauth/hsm/lsat1/collection01/tm/T1/2011/130/42/LT05_L1TP_130042_20111116_20161005_01_T1.tar.gz?id=3q9l0jsesvmghvgns9it353oc5&iid=LT51300422011320BKT00&did=401829818&ver=production"
-#     cookie_file = "/tmp/cookies.txt"
-#
-#     wget_login = "wget --keep-session-cookies --save-cookies cookies.txt -O login.rsp https://github.com/login"
-# grep authenticity_token login.rsp"
-# csrf_token = "URD9Yw=="
-#     wget_download = "wget --load-cookies cookies.txt --keep-session-cookies --save-cookies cookies.txt --post-data='login=USERNAME&password=PASSWORD&authenticity_token=TOKEN_VALUE_PRINTED_BY_GREP_THEN_PERCENT_ENCODED' https://github.com/session"% (cookie_file, url)
-#
-#     cookies = HTTPCookieProcessor()
-#     opener = build_opener(cookies)
-#     install_opener(opener)
-#
-#     data = urlopen("https://ers.cr.usgs.gov").read().decode('utf-8')
-#     m = re.search(r'<input .*?name="csrf_token".*?value="(.*?)"', data)
-#     if m:
-#         token = m.group(1)
-#     else:
-#         print("Error : CSRF_Token not found")
-#
-#     params = urlencode(dict(username='wangxz79@163.com', password='wangxz79', csrf_token=token))
-#     # params = "password=wangxz79&csrf_token=rYZ0%2Fw%3D%3D&username=wangxz79%40163.com"
-#     params = params.encode('ascii')
-#     request = Request("https://ers.cr.usgs.gov/login", params, headers={})
-#     f = urlopen(request)
-#
-#     cur_cmd = "curl --user wangxz79@163.com:wangxz79 --cookie-jar ./cookie.txt https://ers.cr.usgs.gov/"
-#     cur_cmd = "curl --cookie ./cookie.txt https://ers.cr.usgs.gov/login"
-#
-#
-#
-#
+
     # wget1 =  "wget --keep-session-cookies --save-cookies cookies.txt -O login.rsp https://ers.cr.usgs.gov/"
     # # grep authenticity_token login.rsp
     # params = get_login_params("./login.rsp")
@@ -288,4 +205,4 @@ if __name__ == '__main__':
     # #         print("Error : CSRF_Token not found")
     # # params = urlencode(dict(username='wangxz79@163.com', password='wangxz79', csrf_token=token))
     # wget2 = "wget --load-cookies cookies.txt --keep-session-cookies --save-cookies cookies.txt --post-data=%s https://ers.cr.usgs.gov/login"%params
-    # wget3 = 'wget --load-cookies cookies.txt -O test.tar.gz https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE'
+    # wget3 = 'wget --load-cookies cookies.txt -O test.tar.gz https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE' --inet4-only
