@@ -20,6 +20,7 @@ MSG_EORDER = "Order"
 MSG_SKIP = "Skip"  # SKIP
 MSG_EDATA = "Error"  # File error
 
+user_agent = {'User-agent': "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.89 Safari/537.36" }
 
 def successError(msg):
     sys.stderr.write("Success: " + msg + "\n");
@@ -168,22 +169,23 @@ def entity_download(dataId, outfile, product=None):
     cookie_file = '/tmp/cookies.txt'
     login_file = "/tmp/login.rsp"
     try:
-        wget1 = "wget --keep-session-cookies --save-cookies %s -O %s https://ers.cr.usgs.gov/"%(cookie_file, login_file)
+        wget1 = "wget --keep-session-cookies --save-cookies %s --user-agent=%s -O %s https://ers.cr.usgs.gov/"%(cookie_file, user_agent, login_file)
         print(wget1)
         os.system(wget1)
         # grep authenticity_token login.rsp
 
         params = get_login_params(login_file)
 
-        wget2 = '''wget --load-cookies %s --keep-session-cookies --save-cookies %s --post-data="%s" https://ers.cr.usgs.gov/login''' % (cookie_file, cookie_file, params)
+        wget2 = '''wget --load-cookies %s --keep-session-cookies --save-cookies %s --user-agent=%s --post-data="%s" https://ers.cr.usgs.gov/login''' % (cookie_file, cookie_file,user_agent, params)
         print(wget2)
         os.system(wget2)
-        wget3 = 'wget --load-cookies %s -O %s %s -4'%(cookie_file,outfile, dl_url)
+        wget3 = 'wget -c -4 --load-cookies %s --user-agent=%s -O %s %s '%(cookie_file,user_agent, outfile, dl_url)
         print(wget3)
         os.system(wget3)
     except Exception as e:
         print(e)
         return MSG_EDATA, -2, "下载数据失败！"
+    #  https://earthexplorer.usgs.gov/download/12864/LC81160322018017LGN00/STANDARD/EE
 
 
     return "Success", 2, "下载完成！"
@@ -206,3 +208,7 @@ if __name__ == '__main__':
     # # params = urlencode(dict(username='wangxz79@163.com', password='wangxz79', csrf_token=token))
     # wget2 = "wget --load-cookies cookies.txt --keep-session-cookies --save-cookies cookies.txt --post-data=%s https://ers.cr.usgs.gov/login"%params
     # wget3 = 'wget --load-cookies cookies.txt -O test.tar.gz https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE' --inet4-only
+
+    # wget --keep-session-cookies --save-cookies cookies.txt --user-agent={'User-agent': "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.89 Safari/537.36" } -O login.rsp https://ers.cr.usgs.gov/
+    # wget --load-cookies cookies.txt --keep-session-cookies --save-cookies cookies.txt --user-agent={'User-agent': "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.89 Safari/537.36" } --post-data="password=wangxz79&csrf_token=xqvcqQ%3D%3D&username=wangxz79%40163.com" https://ers.cr.usgs.gov/login
+    # wget -c -4 --load-cookies cookies.txt --user-agent={'User-agent': "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.89 Safari/537.36" } -O test.tar.gz https://earthexplorer.usgs.gov/download/12864/LC81561192017038LGN00/STANDARD/EE
