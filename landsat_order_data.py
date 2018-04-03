@@ -18,10 +18,16 @@ MSG_EDATA = "Error"  # File error
 
 print("before database")
 
-pg_src = pgsql.Pgsql("10.0.138.20", "postgres", "", "gscloud")
-pg_metadata = pgsql.Pgsql("10.0.138.20", "postgres", "", "gscloud_metadata")
+def get_pg_src():
+    pg_src = pgsql.Pgsql("10.0.138.20", "postgres", "", "gscloud")
+    return pg_src
+def get_pg_metadata():
+    pg_metadata = pgsql.Pgsql("10.0.138.20", "postgres", "", "gscloud_metadata")
+    return pg_metadata
+
 cache_root = "/dev/shm"
-data_root = "/mnt/gscloud/LANDSAT"
+# data_root = "/mnt/gscloud/LANDSAT"
+data_root = "/mnt"
 
 print("after database")
 
@@ -39,6 +45,7 @@ class UserOrderManager(object):
         self.user_list = {}
         
     def reset_state(self):
+        pg_src = get_pg_src()
         pg_src.update("update gscloud_order_data set laststate = -2 where laststate = 1 and productid in (241, 242, 243, 244, 245, 411)")
     
     def query_user(self, userid):
@@ -68,6 +75,8 @@ class UserOrderManager(object):
         return True 
     
     def update_dataexists(self, dataid):
+        pg_src = get_pg_src()
+        pg_metadata = get_pg_metadata()
         try:
             pg_metadata.update("update metadata_landsat set dataexists = 1 where dataid = %s", [dataid, ])
             pg_src.update("update gscloud_order_data set startdate = %s, laststate = 2 where dataname = %s and startdate is null and laststate != 2", [datetime.datetime.now(), dataid])
@@ -75,7 +84,9 @@ class UserOrderManager(object):
         except Exception as e:
             print(e)
             pass
+
     def update_laststate(self, data_id, laststate, retry_times, statestr, usgs_ordernumber, update_startdate= False):
+        pg_src = get_pg_src()
         try:
             pg_src.update("update gscloud_order_data set laststate = %s, retry_times = %s, statestr = %s, usgs_ordernumber = %s where id = %s", [laststate, retry_times, statestr, usgs_ordernumber, data_id, ])
             if update_startdate:
@@ -152,6 +163,7 @@ class UserOrderManager(object):
         self.reset_state()
         icount = 0
         while True:
+            pg_src = get_pg_src()
             datas = pg_src.getAll(self.info_sql, (icount,))
             if len(datas) == 0:
                 icount = 0
@@ -162,6 +174,7 @@ class UserOrderManager(object):
                 time.sleep(300)
                 continue
             print( len(datas), "orders")
+
             for data in datas:
                 print (data)
                 ordernumber, userid = data
@@ -169,17 +182,20 @@ class UserOrderManager(object):
                     print( "continue")
                     continue
                 print (self.data_sql)
+                pg_src = get_pg_src()
                 landsat_datas = pg_src.getAll(self.data_sql, (ordernumber,))
                 if len(landsat_datas) > 0:
                     self.register_user(userid)
                     print (landsat_datas)
                     self.download_landsat(landsat_datas)
             icount = icount + 3
-            
+
+            pg_src = get_pg_src()
             pg_src.update("update gscloud_order_data set laststate = 11 where laststate = 10 and date_part('day', now() - startdate::timestamp ) > 9")
             pg_src.update("update gscloud_order_data set retry_times = 0 where productid in (241, 242, 243, 244, 245, 411) and retry_times = 4 and laststate in (11, -2, -3) and date_part('day', now() - startdate::timestamp ) > 1")
             user_list = self.user_list.values()
             delta = datetime.timedelta(days=1)
+
             for user in user_list:
                 if datetime.datetime.now() - user.ctime > delta:
                     self.remove_user(user.userid)
